@@ -33,7 +33,7 @@ jobs:
         if: env.XP_iboxpayHEADER
         run: |
           cd ~/JavaScript
-          node Task/iboxpay.js
+          node Task/iboxpayZB.js
         env:
           
           PUSH_KEY: ${{ secrets.PUSH_KEY }}
