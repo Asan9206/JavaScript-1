@@ -33,15 +33,17 @@ boxjs链接  https://raw.githubusercontent.com/ziye12/JavaScript/main/Task/ziye.
 2.6 修复判定错误,增加surge获取token重写
 2.7 增加红包雨，设置LIVE等于3 开启
 2.7-2 调整红包雨运行机制
+2.8 修复无人直播出现的错误
+2.8-2 修复红包雨结束报错
 
-⚠️一共2个位置 2个ck  👉 3条 Secrets 
+⚠️一共2个位置 2个ck  👉 4条 Secrets 
 多账号换行
 
 第一步 添加  hostname=veishop.iboxpay.com,
 
-第二步 添加笑谱获取更新TOKEN重写  
+第二步 ⚠️只 添加笑谱获取更新TOKEN重写  
 
-登录  获取更新TOKEN重写 
+登录笑谱(在登录状态就退出，重新登录)  获取更新TOKEN
 
 第三步 添加笑谱获取header重写
 
@@ -50,8 +52,8 @@ boxjs链接  https://raw.githubusercontent.com/ziye12/JavaScript/main/Task/ziye.
 iboxpayheaderVal 👉XP_iboxpayHEADER
 refreshtokenVal 👉XP_refreshTOKEN
 
-设置直播次数 可设置 0到60  0关闭
-LIVE  👉  XP_live
+设置任务 可设置 0 1 2    0开视频关直播 1开视频开直播 2关视频开直播
+ LIVE  👉  XP_live
 
 设置提现金额 可设置 0 1 15 30 50 100  默认0关闭
 CASH  👉  XP_CASH
@@ -315,7 +317,7 @@ async function all() {
         await console.log(`-------------------------\n\n🔔开始运行【${$.name+(i+1)}】`)
         console.log('CK获取时间:' + time(Number(oldtime)))
         await refreshtoken(); //更新TOKEN
-        if (LIVE == 3 && (nowTimes.getHours() === 12 || nowTimes.getHours() === 19 || nowTimes.getHours() === 21) && (nowTimes.getMinutes() >= 0 && nowTimes.getMinutes() <= 10)) {
+        if (LIVE == 999 && (nowTimes.getHours() === 12 || nowTimes.getHours() === 19 || nowTimes.getHours() === 21) && (nowTimes.getMinutes() >= 0 && nowTimes.getMinutes() <= 10)) {
             HBY = 1
             await hbylq(); //红包雨领取
         }
@@ -340,11 +342,13 @@ async function all() {
 
             if (LIVE >= 1 && nowTimes.getHours() >= 8 && nowTimes.getHours() <= 23 && $.sylist.resultCode && livecs < 30) {
                 await liveslist(); //直播节目表
+if(liveIdcd>=1){
                 dd = liveIdcd * 35 - 34
                 console.log(`📍本次直播运行需要${dd}秒` + '\n')
+
                 await lives(); //看直播
                 await $.wait(dd * 1000)
-
+}
             }
 
             if (LIVE != 2 && nowTimes.getHours() <= 18 && $.splimit.data.isUperLimit == false || tts() <= (Number(oldtime) + 48 * 60 * 60 * 1000)) {
@@ -500,11 +504,15 @@ function hdid(timeout = 0) {
                     if ($.hdid.resultCode == 1) {
                         spid = $.hdid.data.everyDayActivityList.find(item => item.actTypeId === 9)
                         zbid = $.hdid.data.everyDayActivityList.find(item => item.actTypeId === 10)
-                        hbyid = $.hdid.data.everyDayActivityList.find(item => item.actTypeId === 11)
                         console.log(spid.actName + 'ID：' + spid.actId + '\n' +
-                            zbid.actName + 'ID：' + zbid.actId + '\n' + hbyid.actName + 'ID：' + hbyid.actId + '\n');
+                            zbid.actName + 'ID：' + zbid.actId + '\n');
                         $.message += '【' + spid.actName + 'ID】：' + spid.actId + '\n' +
-                            '【' + zbid.actName + 'ID】：' + zbid.actId + '\n' + '【' + hbyid.actName + 'ID】：' + hbyid.actId + '\n';
+                            '【' + zbid.actName + 'ID】：' + zbid.actId + '\n';
+                    }
+                    if ($.hdid.resultCode == 1&&$.hdid.data.everyDayActivityList.find(item => item.actTypeId === 11)) {                   
+                        hbyid = $.hdid.data.everyDayActivityList.find(item => item.actTypeId === 11)
+                        console.log(hbyid.actName + 'ID：' + hby.actId + '\n');
+                        $.message += '【' + hbyid.actName + 'ID】：' + hbyid.actId + '\n';
                     }
                 } catch (e) {
                     $.logErr(e, resp);
@@ -840,13 +848,13 @@ function liveslist(timeout = 0) {
                 try {
                     if (logs) $.log(`${O}, 直播节目表🚩: ${data}`);
                     $.liveslist = JSON.parse(data);
-                    if ($.liveslist.resultCode == 1) {
+                    if ($.liveslist.resultCode == 1&&$.liveslist.data.liveIdList.length) {
                         liveId = $.liveslist.data.liveIdList
                         liveIdcd = liveId.length
-
+}
                         console.log(`直播节目表，当前${liveIdcd}个直播\n`);
                         $.message += `【直播节目表】：当前${liveIdcd}个直播\n`
-                    }
+                    
                     if ($.liveslist.resultCode == 0) {
                         console.log($.liveslist.errorDesc + '\n');
                         $.message += '【直播节目表】：' + $.liveslist.errorDesc + '\n';
@@ -941,7 +949,7 @@ function sylist(timeout = 0) {
                     } else videoscs = 0;
 
                     spsy = $.goldcoin.data.coinSum - livecs * 500
-                    console.log('已获得红包雨奖励 ' + livecs + ' 次\n')
+                    console.log('已获得红包雨奖励 ' + hbycs + ' 次\n')
                     $.message +=
                         '【红包雨收益】：已获得红包雨奖励 ' + hbycs + ' 次\n'
                     console.log('已获得直播奖励 ' + livecs + ' 次，共' + livecs * 500 + '金币\n')
